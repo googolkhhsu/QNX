@@ -26,6 +26,7 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb);
 int io_read2(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb);
 int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb);
 int getspeedometer(char *pspeed, size_t size);
+int setpowertrain(void *buffer, int nbytes);
 
 static char *buffer = "powertrain\n";
 char recvbuf[200];
@@ -258,6 +259,9 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb)
     resmgr_msgread(ctp, buf, nbytes, sizeof(msg->i));
     buf[nbytes] = '\0'; /* just in case the text is not NULL terminated */
     printf("Received %zu bytes = '%s'\n", nbytes, buf);
+
+    setpowertrain(buf, nbytes);
+
     free(buf);
 
     if (nbytes > 0)
@@ -272,7 +276,7 @@ int getspeedometer(char *pspeed, size_t size)
     if (pspeed == NULL)
     {
         ret = -9;
-        goto END_OF_GETSPEEDOMETER;
+        goto END_OF_FUNC;
     }
 
     // char recvbuf[200];
@@ -284,7 +288,7 @@ int getspeedometer(char *pspeed, size_t size)
         perror("socket error");
         // return -1;
         ret = -1;
-        goto END_OF_GETSPEEDOMETER;
+        goto END_OF_FUNC;
     }
 
     struct sockaddr_in server;
@@ -311,11 +315,55 @@ int getspeedometer(char *pspeed, size_t size)
 CLOSE_SOCKET:
     close(sockfd);
 
-END_OF_GETSPEEDOMETER:
+END_OF_FUNC:
     return ret;
 }
 
 int getodometer(char *podo)
 {
     return 0;
+}
+
+int setpowertrain(void *buffer, int nbytes)
+{
+    int ret = 0;
+    if (buffer == NULL)
+    {
+        ret = -9;
+        goto END_OF_FUNC;
+    }
+
+    int sockfd = 0;
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        perror("socket error");
+        // return -1;
+        ret = -1;
+        goto END_OF_FUNC;
+    }
+
+    struct sockaddr_in server;
+    server.sin_family = AF_INET;
+    server.sin_port = htons(3490);
+    server.sin_addr.s_addr = inet_addr("192.168.179.129");
+    if (connect(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0)
+    {
+        perror("connect");
+        // return 1;
+        ret = -2;
+        goto CLOSE_SOCKET;
+    }
+
+    if ((ret = send(sockfd, buffer, 200, 0)) <= 0)
+    {
+        perror("send fail");
+        ret = 0;
+        goto CLOSE_SOCKET;
+    }
+
+CLOSE_SOCKET:
+    close(sockfd);
+
+END_OF_FUNC:
+    return ret;
 }
