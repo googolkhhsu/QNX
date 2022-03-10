@@ -8,14 +8,19 @@ LIB+=$(SOCKLIB)
 
 .PHONY: test
 
-all: powertrain bj
+all: powertrain bj app
 	@echo
-	@echo done
+	@echo build finish!
+	@echo
 
 powertrain: out
 	$(TCC) $(LIB) -o $(OUT)/$@ $@.c
 
-bj:
+app: out
+	$(TCC) -o $(OUT)/app-read app-read.c
+	$(TCC) -o $(OUT)/app-write app-write.c
+
+bj: out
 	$(HCC) -o $(OUT)/bj-tcp-client bj-tcp-client.c
 	$(HCC) -o $(OUT)/bj-tcp-server bj-tcp-server.c
 	$(HCC) -o $(OUT)/listener listener.c

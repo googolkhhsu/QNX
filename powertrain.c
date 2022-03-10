@@ -129,8 +129,8 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
     // nbytes = min(_IO_READ_GET_NBYTES(msg), nleft);
     nbytes = min(_IO_READ_GET_NBYTES(msg), nleft);
 
-    printf(" %d, %d, %d\n", msg->i.nbytes, ocb->attr->nbytes, ocb->offset);
-    printf("nbytes = %d, nleft = %d\n", nbytes, nleft);
+    // printf(" %d, %d, %d\n", msg->i.nbytes, ocb->attr->nbytes, ocb->offset);
+    // printf("nbytes = %d, nleft = %d\n", nbytes, nleft);
     if (nbytes > 0)
     {
         // /* set up the return data IOV */
