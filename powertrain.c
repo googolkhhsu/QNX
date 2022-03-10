@@ -272,7 +272,7 @@ int getspeedometer(char *pspeed, size_t size)
     if (pspeed == NULL)
     {
         ret = -9;
-        goto GETSPEEDOMETER_RETURN;
+        goto END_OF_GETSPEEDOMETER;
     }
 
     // char recvbuf[200];
@@ -284,7 +284,7 @@ int getspeedometer(char *pspeed, size_t size)
         perror("socket error");
         // return -1;
         ret = -1;
-        goto GETSPEEDOMETER_RETURN;
+        goto END_OF_GETSPEEDOMETER;
     }
 
     struct sockaddr_in server;
@@ -311,7 +311,7 @@ int getspeedometer(char *pspeed, size_t size)
 CLOSE_SOCKET:
     close(sockfd);
 
-GETSPEEDOMETER_RETURN:
+END_OF_GETSPEEDOMETER:
     return ret;
 }
 
