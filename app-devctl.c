@@ -44,5 +44,7 @@ int main(int argc, char **argv)
     val = -1;
     ret = devctl(fd, MY_DEVCTL_GETVAL, &val, sizeof(val), NULL);
     printf("GET returned %d w/ server value %d == 50? \n", ret, val);
+
+    close(fd);
     return (0);
 }
