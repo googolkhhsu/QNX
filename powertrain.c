@@ -18,6 +18,8 @@
 #include <sys/iofunc.h>
 #include <sys/dispatch.h>
 
+#include "my_devctl.h"
+
 static resmgr_connect_funcs_t connect_funcs;
 static resmgr_io_funcs_t io_funcs;
 static iofunc_attr_t attr;
@@ -25,11 +27,13 @@ static iofunc_attr_t attr;
 int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb);
 int io_read2(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb);
 int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb);
+int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb);
 int getspeedometer(char *pspeed, size_t size);
 int setpowertrain(void *buffer, int nbytes);
 
 static char *buffer = "powertrain\n";
 char recvbuf[200];
+int global_integer = 0;
 
 int main(int argc, char **argv)
 {
@@ -58,6 +62,7 @@ int main(int argc, char **argv)
                      _RESMGR_IO_NFUNCS, &io_funcs);
     io_funcs.read = io_read;
     io_funcs.write = io_write;
+    io_funcs.devctl = io_devctl;
 
     /* initialize attribute structure used by the device */
     iofunc_attr_init(&attr, S_IFNAM | 0666, 0, 0);
@@ -268,6 +273,91 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb)
         ocb->attr->flags |= IOFUNC_ATTR_MTIME | IOFUNC_ATTR_CTIME;
 
     return (_RESMGR_NPARTS(0));
+}
+
+int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg,
+              RESMGR_OCB_T *ocb)
+{
+    int nbytes, status, previous;
+
+    union
+    { /* See note 1 */
+        data_t data;
+        int data32;
+        /* ... other devctl types you can receive */
+    } * rx_data;
+
+    /*
+    Let common code handle DCMD_ALL_* cases.
+    You can do this before or after you intercept devctls, depending
+    on your intentions. Here we aren't using any predefined values,
+    so let the system ones be handled first. See note 2.
+    */
+    if ((status = iofunc_devctl_default(ctp, msg, ocb)) !=
+        _RESMGR_DEFAULT)
+    {
+        return (status);
+    }
+    status = nbytes = 0;
+
+    /*
+    Note this assumes that you can fit the entire data portion of
+    the devctl into one message. In reality you should probably
+    perform a MsgReadv() once you know the type of message you
+    have received to get all of the data, rather than assume
+    it all fits in the message. We have set in our main routine
+    that we'll accept a total message size of up to 2 KB, so we
+    don't worry about it in this example where we deal with ints.
+    */
+
+    /* Get the data from the message. See Note 3. */
+    rx_data = _DEVCTL_DATA(msg->i);
+
+    /*
+    Three examples of devctl operations:
+    SET: Set a value (int) in the server
+    GET: Get a value (int) from the server
+    SETGET: Set a new value and return the previous value
+    */
+    switch (msg->i.dcmd)
+    {
+    case MY_DEVCTL_SETVAL:
+        global_integer = rx_data->data32;
+        nbytes = 0;
+        break;
+
+    case MY_DEVCTL_GETVAL:
+        rx_data->data32 = global_integer; /* See note 4 */
+        nbytes = sizeof(rx_data->data32);
+        break;
+
+    case MY_DEVCTL_SETGET:
+        previous = global_integer;
+        global_integer = rx_data->data.tx;
+        /* See note 4. The rx data overwrites the tx data
+        for this command. */
+        rx_data->data.rx = previous;
+        nbytes = sizeof(rx_data->data.rx);
+        break;
+
+    default:
+        return (ENOSYS);
+    }
+
+    /* Clear the return message. Note that we saved our data past
+    this location in the message. */
+    memset(&msg->o, 0, sizeof(msg->o));
+
+    /*
+    If you wanted to pass something different to the return
+    field of the devctl() you could do it through this member.
+    See note 5.
+    */
+    msg->o.ret_val = status;
+
+    /* Indicate the number of bytes and return the message */
+    msg->o.nbytes = nbytes;
+    return (_RESMGR_PTR(ctp, &msg->o, sizeof(msg->o) + nbytes));
 }
 
 int getspeedometer(char *pspeed, size_t size)

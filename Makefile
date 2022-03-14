@@ -19,6 +19,7 @@ powertrain: out
 app: out
 	$(TCC) -o $(OUT)/app-read app-read.c
 	$(TCC) -o $(OUT)/app-write app-write.c
+	$(TCC) -o $(OUT)/app-devctl app-devctl.c
 
 bj: out
 	$(HCC) -o $(OUT)/bj-tcp-client bj-tcp-client.c
