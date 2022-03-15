@@ -3,18 +3,23 @@ HCC:=gcc
 OUT:=out
 RM:=rm -rf
 ECHO=echo
-SOCKLIB:=-lsocket
-LIB+=$(SOCKLIB)
+LIB_SOCKET:=-lsocket
+LIB+=$(LIB_SOCKET)
+
+#D_DEBUG:=DEBUG
+D_SER_ADDR:=-DSER_ADDR=\"192.168.179.129\"
+DEF+=$(D_DEBUG)
+DEF+=$(D_SER_ADDR)
 
 .PHONY: test
 
-all: powertrain bj app
+all: bj app powertrain
 	@echo
 	@echo "*** build finish ***"
 	@echo
 
 powertrain: out
-	$(TCC) $(LIB) -o $(OUT)/$@ $@.c
+	$(TCC) $(LIB) $(DEF) -o $(OUT)/$@ $@.c
 
 app: out
 	$(TCC) -o $(OUT)/app-read app-read.c

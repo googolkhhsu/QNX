@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -14,6 +15,14 @@
  * warning when we use the dispatch_*() functions below
  */
 #define THREAD_POOL_PARAM_T dispatch_context_t
+
+#ifndef SER_ADDR
+#define SER_ADDR "127.0.0.1"
+#endif
+
+#define PORT "3490" // the port client will be connecting to
+
+#define MAXDATASIZE 100 // max number of bytes we can get at once
 
 #include <sys/iofunc.h>
 #include <sys/dispatch.h>
@@ -29,6 +38,8 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb);
 int io_read2(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb);
 int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb);
 int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb);
+
+int conn_server(char *addr, char *port, int cmd, void *buffer);
 int getspeedometer(char *pspeed, size_t size);
 int setpowertrain(void *buffer, int nbytes);
 
@@ -153,12 +164,11 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
 
         // nparts = 1;
 
-        int r = getspeedometer(recvbuf, sizeof recvbuf);
-        if (r > 0)
+        if (getspeedometer(recvbuf, sizeof recvbuf) == 0)
         {
-            //printf("recvbuf = %s\n", recvbuf);
-            //char log[50];
-            //snprintf(log, 50, "r: %s", recvbuf);
+            // printf("recvbuf = %s\n", recvbuf);
+            // char log[50];
+            // snprintf(log, 50, "r: %s", recvbuf);
             DLOG("r: %s", recvbuf);
             SETIOV(ctp->iov, recvbuf + ocb->offset, nbytes);
             _IO_SET_READ_NBYTES(ctp, nbytes);
@@ -173,7 +183,7 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
     }
     else
     {
-        //printf("%d\n", nbytes);
+        // printf("%d\n", nbytes);
         dlog("0 nbytes");
 
         /*
@@ -210,17 +220,16 @@ int io_read2(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
 
     if (nbytes)
     {
-        int r = getspeedometer(recvbuf, sizeof recvbuf);
-        if (r > 0)
+        if (getspeedometer(recvbuf, sizeof recvbuf) == 0)
         {
-            printf("recvbuf = %s, %d, %d, %d, 0x%x\n", recvbuf, r, nbytes, strlen(recvbuf), recvbuf);
+            printf("recvbuf = %s, %d, %d, 0x%x\n", recvbuf, nbytes, strlen(recvbuf), recvbuf);
             MsgReply(ctp->rcvid, nbytes, recvbuf + ocb->offset, nbytes);
             ocb->attr->flags |= IOFUNC_ATTR_ATIME | IOFUNC_ATTR_DIRTY_TIME;
             ocb->offset += nbytes;
         }
         else
         {
-            printf("%d\n", r);
+            printf("getspeedometer fail\n");
             MsgReply(ctp->rcvid, EOK, NULL, 0);
         }
     }
@@ -372,51 +381,52 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg,
 
 int getspeedometer(char *pspeed, size_t size)
 {
-    int ret = 0;
-    if (pspeed == NULL)
-    {
-        ret = -9;
-        goto END_OF_FUNC;
-    }
+    // int ret = 0;
+    // if (pspeed == NULL)
+    // {
+    //     ret = -9;
+    //     goto END_OF_FUNC;
+    // }
 
     // char recvbuf[200];
     memset(pspeed, 0, size);
 
-    int sockfd = 0;
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        perror("socket error");
-        // return -1;
-        ret = -1;
-        goto END_OF_FUNC;
-    }
+    //     int sockfd = 0;
+    //     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    //     {
+    //         perror("socket error");
+    //         // return -1;
+    //         ret = -1;
+    //         goto END_OF_FUNC;
+    //     }
 
-    struct sockaddr_in server;
-    server.sin_family = AF_INET;
-    server.sin_port = htons(3490);
-    server.sin_addr.s_addr = inet_addr("192.168.179.129");
-    if (connect(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0)
-    {
-        perror("connect");
-        // return 1;
-        ret = -2;
-        goto CLOSE_SOCKET;
-    }
+    //     struct sockaddr_in server;
+    //     server.sin_family = AF_INET;
+    //     server.sin_port = htons(3490);
+    //     server.sin_addr.s_addr = inet_addr("192.168.179.129");
+    //     if (connect(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0)
+    //     {
+    //         perror("connect");
+    //         // return 1;
+    //         ret = -2;
+    //         goto CLOSE_SOCKET;
+    //     }
 
-    if ((ret = recv(sockfd, pspeed, 200, 0)) <= 0)
-    {
-        perror("no result");
-        ret = 0;
-        goto CLOSE_SOCKET;
-    }
+    //     if ((ret = recv(sockfd, pspeed, 200, 0)) <= 0)
+    //     {
+    //         perror("no result");
+    //         ret = 0;
+    //         goto CLOSE_SOCKET;
+    //     }
 
-    // printf("recvbuf = %s, %d, %d, 0x%x\n", pspeed, ret, sizeof pspeed, pspeed);
+    //     // printf("recvbuf = %s, %d, %d, 0x%x\n", pspeed, ret, sizeof pspeed, pspeed);
 
-CLOSE_SOCKET:
-    close(sockfd);
+    // CLOSE_SOCKET:
+    //     close(sockfd);
 
-END_OF_FUNC:
-    return ret;
+    // END_OF_FUNC:
+    //     return ret;
+    return conn_server(SER_ADDR, PORT, 0, pspeed);
 }
 
 int getodometer(char *podo)
@@ -426,44 +436,130 @@ int getodometer(char *podo)
 
 int setpowertrain(void *buffer, int nbytes)
 {
-    int ret = 0;
-    if (buffer == NULL)
+    //     int ret = 0;
+    //     if (buffer == NULL)
+    //     {
+    //         ret = -9;
+    //         goto END_OF_FUNC;
+    //     }
+
+    //     int sockfd = 0;
+    //     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    //     {
+    //         perror("socket error");
+    //         // return -1;
+    //         ret = -1;
+    //         goto END_OF_FUNC;
+    //     }
+
+    //     struct sockaddr_in server;
+    //     server.sin_family = AF_INET;
+    //     server.sin_port = htons(3490);
+    //     server.sin_addr.s_addr = inet_addr("192.168.179.129");
+    //     if (connect(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0)
+    //     {
+    //         perror("connect");
+    //         // return 1;
+    //         ret = -2;
+    //         goto CLOSE_SOCKET;
+    //     }
+
+    //     if ((ret = send(sockfd, buffer, 200, 0)) <= 0)
+    //     {
+    //         perror("send fail");
+    //         ret = 0;
+    //         goto CLOSE_SOCKET;
+    //     }
+
+    // CLOSE_SOCKET:
+    //     close(sockfd);
+
+    // END_OF_FUNC:
+    //     return ret;
+    return conn_server(SER_ADDR, PORT, 1, buffer);
+}
+
+// get sockaddr, IPv4 or IPv6:
+void *get_in_addr(struct sockaddr *sa)
+{
+    if (sa->sa_family == AF_INET)
     {
-        ret = -9;
-        goto END_OF_FUNC;
+        return &(((struct sockaddr_in *)sa)->sin_addr);
     }
 
-    int sockfd = 0;
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    return &(((struct sockaddr_in6 *)sa)->sin6_addr);
+}
+
+int conn_server(char *addr, char *port, int cmd, void *buffer)
+{
+    int sockfd, numbytes;
+    char buf[MAXDATASIZE];
+    struct addrinfo hints, *servinfo, *p;
+    int rv;
+    char s[INET6_ADDRSTRLEN];
+
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0)
     {
-        perror("socket error");
-        // return -1;
-        ret = -1;
-        goto END_OF_FUNC;
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+        return 1;
     }
 
-    struct sockaddr_in server;
-    server.sin_family = AF_INET;
-    server.sin_port = htons(3490);
-    server.sin_addr.s_addr = inet_addr("192.168.179.129");
-    if (connect(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0)
+    // loop through all the results and connect to the first we can
+    for (p = servinfo; p != NULL; p = p->ai_next)
     {
-        perror("connect");
-        // return 1;
-        ret = -2;
-        goto CLOSE_SOCKET;
+        if ((sockfd = socket(p->ai_family, p->ai_socktype,
+                             p->ai_protocol)) == -1)
+        {
+            perror("client: socket");
+            continue;
+        }
+
+        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1)
+        {
+            perror("client: connect");
+            close(sockfd);
+            continue;
+        }
+
+        break;
     }
 
-    if ((ret = send(sockfd, buffer, 200, 0)) <= 0)
+    if (p == NULL)
     {
-        perror("send fail");
-        ret = 0;
-        goto CLOSE_SOCKET;
+        fprintf(stderr, "client: failed to connect %s\n", addr);
+        return 2;
     }
 
-CLOSE_SOCKET:
+    inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
+              s, sizeof s);
+    printf("client: connecting to %s\n", s);
+
+    freeaddrinfo(servinfo); // all done with this structure
+
+    if (cmd == 0)
+    {
+        if ((numbytes = recv(sockfd, buffer, MAXDATASIZE - 1, 0)) == -1)
+        {
+            perror("recv");
+        }
+
+        // buffer[numbytes] = '\0';
+
+        printf("client: received '%s'\n", buffer);
+    }
+    else
+    {
+        if ((numbytes = send(sockfd, buffer, MAXDATASIZE - 1, 0)) <= 0)
+        {
+            perror("send fail");
+        }
+    }
+
     close(sockfd);
 
-END_OF_FUNC:
-    return ret;
+    return 0;
 }
