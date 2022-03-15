@@ -19,6 +19,7 @@
 #include <sys/dispatch.h>
 
 #include "my_devctl.h"
+#include "inc/log.h"
 
 static resmgr_connect_funcs_t connect_funcs;
 static resmgr_io_funcs_t io_funcs;
@@ -155,7 +156,10 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
         int r = getspeedometer(recvbuf, sizeof recvbuf);
         if (r > 0)
         {
-            printf("recvbuf = %s\n", recvbuf);
+            //printf("recvbuf = %s\n", recvbuf);
+            //char log[50];
+            //snprintf(log, 50, "r: %s", recvbuf);
+            DLOG("r: %s", recvbuf);
             SETIOV(ctp->iov, recvbuf + ocb->offset, nbytes);
             _IO_SET_READ_NBYTES(ctp, nbytes);
             ocb->offset += nbytes;
@@ -169,7 +173,8 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
     }
     else
     {
-        printf("%d\n", nbytes);
+        //printf("%d\n", nbytes);
+        dlog("0 nbytes");
 
         /*
          * they've asked for zero bytes or they've already previously
@@ -284,6 +289,7 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg,
     { /* See note 1 */
         data_t data;
         int data32;
+        char buff[200];
         /* ... other devctl types you can receive */
     } * rx_data;
 
@@ -322,13 +328,17 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg,
     switch (msg->i.dcmd)
     {
     case MY_DEVCTL_SETVAL:
-        global_integer = rx_data->data32;
+        // global_integer = rx_data->data32;
+        // nbytes = 0;
+        setpowertrain(rx_data->buff, strlen(rx_data->buff));
         nbytes = 0;
         break;
 
     case MY_DEVCTL_GETVAL:
-        rx_data->data32 = global_integer; /* See note 4 */
-        nbytes = sizeof(rx_data->data32);
+        // rx_data->data32 = global_integer; /* See note 4 */
+        // nbytes = sizeof(rx_data->data32);
+        getspeedometer(rx_data->buff, sizeof rx_data->buff);
+        nbytes = sizeof rx_data->buff;
         break;
 
     case MY_DEVCTL_SETGET:
@@ -400,7 +410,7 @@ int getspeedometer(char *pspeed, size_t size)
         goto CLOSE_SOCKET;
     }
 
-    printf("recvbuf = %s, %d, %d, 0x%x\n", pspeed, ret, sizeof pspeed, pspeed);
+    // printf("recvbuf = %s, %d, %d, 0x%x\n", pspeed, ret, sizeof pspeed, pspeed);
 
 CLOSE_SOCKET:
     close(sockfd);

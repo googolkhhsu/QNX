@@ -4,7 +4,7 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "D:\\program\\qnx700\\target\\qnx7\\usr\\include"
+                "/mnt/d/program/qnx700/targer/qnx7/usr/include"
             ],
             "defines": [
                 "_DEBUG",

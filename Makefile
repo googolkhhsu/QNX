@@ -10,7 +10,7 @@ LIB+=$(SOCKLIB)
 
 all: powertrain bj app
 	@echo
-	@echo build finish!
+	@echo "*** build finish ***"
 	@echo
 
 powertrain: out
@@ -18,6 +18,7 @@ powertrain: out
 
 app: out
 	$(TCC) -o $(OUT)/app-read app-read.c
+	$(TCC) -o $(OUT)/app-read2 app-read2.c
 	$(TCC) -o $(OUT)/app-write app-write.c
 	$(TCC) -o $(OUT)/app-devctl app-devctl.c
 
