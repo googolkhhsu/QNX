@@ -10,25 +10,27 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "my_devctl.h"
+#include "inc/log.h"
+
 /*
  * Define THREAD_POOL_PARAM_T such that we can avoid a compiler
  * warning when we use the dispatch_*() functions below
  */
 #define THREAD_POOL_PARAM_T dispatch_context_t
 
+#include <sys/iofunc.h>
+#include <sys/dispatch.h>
+
 #ifndef SER_ADDR
 #define SER_ADDR "127.0.0.1"
 #endif
 
-#define PORT "3490" // the port client will be connecting to
+#ifndef SER_PORT
+#define SER_PORT "3490" // the port client will be connecting to
+#endif
 
 #define MAXDATASIZE 100 // max number of bytes we can get at once
-
-#include <sys/iofunc.h>
-#include <sys/dispatch.h>
-
-#include "my_devctl.h"
-#include "inc/log.h"
 
 static resmgr_connect_funcs_t connect_funcs;
 static resmgr_io_funcs_t io_funcs;
@@ -381,52 +383,9 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg,
 
 int getspeedometer(char *pspeed, size_t size)
 {
-    // int ret = 0;
-    // if (pspeed == NULL)
-    // {
-    //     ret = -9;
-    //     goto END_OF_FUNC;
-    // }
-
-    // char recvbuf[200];
     memset(pspeed, 0, size);
 
-    //     int sockfd = 0;
-    //     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    //     {
-    //         perror("socket error");
-    //         // return -1;
-    //         ret = -1;
-    //         goto END_OF_FUNC;
-    //     }
-
-    //     struct sockaddr_in server;
-    //     server.sin_family = AF_INET;
-    //     server.sin_port = htons(3490);
-    //     server.sin_addr.s_addr = inet_addr("192.168.179.129");
-    //     if (connect(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0)
-    //     {
-    //         perror("connect");
-    //         // return 1;
-    //         ret = -2;
-    //         goto CLOSE_SOCKET;
-    //     }
-
-    //     if ((ret = recv(sockfd, pspeed, 200, 0)) <= 0)
-    //     {
-    //         perror("no result");
-    //         ret = 0;
-    //         goto CLOSE_SOCKET;
-    //     }
-
-    //     // printf("recvbuf = %s, %d, %d, 0x%x\n", pspeed, ret, sizeof pspeed, pspeed);
-
-    // CLOSE_SOCKET:
-    //     close(sockfd);
-
-    // END_OF_FUNC:
-    //     return ret;
-    return conn_server(SER_ADDR, PORT, 0, pspeed);
+    return conn_server(SER_ADDR, SER_PORT, 0, pspeed);
 }
 
 int getodometer(char *podo)
@@ -436,47 +395,7 @@ int getodometer(char *podo)
 
 int setpowertrain(void *buffer, int nbytes)
 {
-    //     int ret = 0;
-    //     if (buffer == NULL)
-    //     {
-    //         ret = -9;
-    //         goto END_OF_FUNC;
-    //     }
-
-    //     int sockfd = 0;
-    //     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    //     {
-    //         perror("socket error");
-    //         // return -1;
-    //         ret = -1;
-    //         goto END_OF_FUNC;
-    //     }
-
-    //     struct sockaddr_in server;
-    //     server.sin_family = AF_INET;
-    //     server.sin_port = htons(3490);
-    //     server.sin_addr.s_addr = inet_addr("192.168.179.129");
-    //     if (connect(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0)
-    //     {
-    //         perror("connect");
-    //         // return 1;
-    //         ret = -2;
-    //         goto CLOSE_SOCKET;
-    //     }
-
-    //     if ((ret = send(sockfd, buffer, 200, 0)) <= 0)
-    //     {
-    //         perror("send fail");
-    //         ret = 0;
-    //         goto CLOSE_SOCKET;
-    //     }
-
-    // CLOSE_SOCKET:
-    //     close(sockfd);
-
-    // END_OF_FUNC:
-    //     return ret;
-    return conn_server(SER_ADDR, PORT, 1, buffer);
+    return conn_server(SER_ADDR, SER_PORT, 1, buffer);
 }
 
 // get sockaddr, IPv4 or IPv6:

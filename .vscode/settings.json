@@ -1,5 +1,12 @@
 {
     "files.associations": {
-        "in.h": "c"
+        "in.h": "c",
+        "inet.h": "c",
+        "string.h": "c",
+        "stddef.h": "c",
+        "errno.h": "c",
+        "stdio.h": "c",
+        "stdlib.h": "c",
+        "netdb.h": "c"
     }
 }

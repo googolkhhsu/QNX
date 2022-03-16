@@ -1,5 +1,5 @@
-#ifndef _MY_DEVCTL_H_
-#define _MY_DEVCTL_H_
+#ifndef _MY_DEVCTL_H
+#define _MY_DEVCTL_H
 
 #include <devctl.h>
 
