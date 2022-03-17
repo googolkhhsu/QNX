@@ -170,11 +170,13 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
 
         // nparts = 1;
 
-        if (getpowertrain(recvbuf, sizeof recvbuf) == 0)
+        // if (getpowertrain(recvbuf, sizeof recvbuf) == 0)
+        if (getpowertrain2(&powertrain_t) == 0)
         {
             // printf("recvbuf = %s\n", recvbuf);
             // char log[50];
             // snprintf(log, 50, "r: %s", recvbuf);
+            snprintf(recvbuf, sizeof(recvbuf), "{%ld,%d,%d}", powertrain_t.odometer, powertrain_t.speedometor, powertrain_t.accelerate);
             DLOG("r: %s", recvbuf);
             SETIOV(ctp->iov, recvbuf + ocb->offset, nbytes);
             _IO_SET_READ_NBYTES(ctp, nbytes);
