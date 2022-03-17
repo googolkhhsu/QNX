@@ -15,7 +15,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-#include "powertrain.h"
+#include "inc/powertrain.h"
 
 #define PORT "3490" // the port users will be connecting to
 

@@ -6,8 +6,8 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include "my_devctl.h"
-#include "powertrain.h"
+#include "inc/my_devctl.h"
+#include "inc/powertrain.h"
 
 POWERTRAIN_T powertrain_t;
 

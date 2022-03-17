@@ -10,8 +10,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "my_devctl.h"
-#include "powertrain.h"
+#include "inc/my_devctl.h"
+#include "inc/powertrain.h"
 #include "inc/log.h"
 
 /*
