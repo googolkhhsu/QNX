@@ -7,6 +7,9 @@
 #include <string.h>
 
 #include "my_devctl.h"
+#include "powertrain.h"
+
+POWERTRAIN_T powertrain_t;
 
 int main(int argc, char **argv)
 {
@@ -24,17 +27,26 @@ int main(int argc, char **argv)
     // val = -1;
     // ret = devctl(fd, MY_DEVCTL_GETVAL, &val, sizeof(val), NULL);
     // printf("GET returned %d w/ server value %d \n", ret, val);
-    memset(buff, 0, 200);
-    ret = devctl(fd, MY_DEVCTL_GETVAL, buff, sizeof(buff), NULL);
-    printf("GET ret = %d, buff = %s\n", ret, buff);
+    // memset(buff, 0, 200);
+    // ret = devctl(fd, MY_DEVCTL_GETVAL, buff, sizeof(buff), NULL);
+    // printf("GET ret = %d, buff = %s\n", ret, buff);
+    memset(&powertrain_t, 0, sizeof(POWERTRAIN_T));
+    ret = devctl(fd, MY_DEVCTL_GETVAL, &powertrain_t, sizeof(POWERTRAIN_T), NULL);
+    printf("GET ret = %d, powertrain_t{%ld, %d, %d}\n", ret, powertrain_t.odometer,
+           powertrain_t.speedometor, powertrain_t.accelerate);
 
     /* Set the value to something else */
     // val = 25;
     // ret = devctl(fd, MY_DEVCTL_SETVAL, &val, sizeof(val), NULL);
     // printf("SET returned %d \n", ret);
-    snprintf(buff, 200, "a b c d e f g");
-    ret = devctl(fd, MY_DEVCTL_SETVAL, buff, sizeof(buff), NULL);
-    printf("SET ret = %d, buff = %s\n", ret, buff);
+    // snprintf(buff, 200, "a b c d e f g");
+    // ret = devctl(fd, MY_DEVCTL_SETVAL, buff, sizeof(buff), NULL);
+    // printf("SET ret = %d, buff = %s\n", ret, buff);
+    memset(&powertrain_t, 0, sizeof(POWERTRAIN_T));
+    powertrain_t.accelerate = '+';
+    ret = devctl(fd, MY_DEVCTL_SETVAL, &powertrain_t, sizeof(POWERTRAIN_T), NULL);
+    printf("SET ret = %d, powertrain_t{%ld, %d, %d}\n", ret, powertrain_t.odometer,
+           powertrain_t.speedometor, powertrain_t.accelerate);
 
     /* Verify we actually did set the value */
     // val = -1;

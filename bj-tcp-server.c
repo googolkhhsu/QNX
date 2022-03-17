@@ -15,11 +15,14 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+#include "powertrain.h"
+
 #define PORT "3490" // the port users will be connecting to
 
 #define BACKLOG 10 // how many pending connections queue will hold
 
 static const char *wellcome = "Wellcome!";
+static POWERTRAIN_T powertrain_t;
 
 void sigchld_handler(int s)
 {
@@ -55,6 +58,8 @@ int main(void)
 	int yes = 1;
 	char s[INET6_ADDRSTRLEN];
 	int rv;
+
+	memset(&powertrain_t, 0, sizeof(POWERTRAIN_T));
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_INET; // AF_UNSPEC;
@@ -138,20 +143,43 @@ int main(void)
 				  s, sizeof s);
 		printf("server: got connection from %s\n", s);
 
-		if (!fork())
+		if (!vfork())
 		{				   // this is the child process
 			close(sockfd); // child doesn't need the listener
-			if (send(new_fd, wellcome, sizeof wellcome, 0) == -1)
+			if (send(new_fd, &powertrain_t, sizeof(POWERTRAIN_T), 0) == -1)
 				perror("send");
 
-			if ((iDataNum = recv(new_fd, buffer, sizeof buffer, 0)) < 0)
+			POWERTRAIN_T temp;
+			memset(&temp, 0, sizeof(POWERTRAIN_T));
+			if ((iDataNum = recv(new_fd, &temp, sizeof(POWERTRAIN_T), 0)) < 0)
 			{
 				perror("recv");
 			}
 			else
 			{
 				if (iDataNum > 0)
-					printf("buffer = %s\n", buffer);
+				{
+					// printf("buffer = %s\n", buffer);
+					// printf("temp = {%ld, %d, %d}\n", temp.odometer, temp.speedometor, temp.accelerate);
+					if (temp.accelerate == '+' && powertrain_t.speedometor < 300)
+					{
+						// printf("1:{%ld, %d, %d}\n", powertrain_t.odometer, powertrain_t.speedometor, powertrain_t.accelerate);
+						powertrain_t.speedometor++;
+						// printf("2:{%ld, %d, %d}\n", powertrain_t.odometer, powertrain_t.speedometor, powertrain_t.accelerate);
+					}
+					else if (temp.accelerate == '-' && powertrain_t.speedometor > 0)
+					{
+						powertrain_t.speedometor--;
+					}
+					// else
+					// {
+					// 	printf("**************\n");
+					// }
+				}
+				// else
+				// {
+				// 	printf("iDataNum = %d\n", iDataNum);
+				// }
 			}
 			close(new_fd);
 			exit(0);

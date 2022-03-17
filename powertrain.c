@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 
 #include "my_devctl.h"
+#include "powertrain.h"
 #include "inc/log.h"
 
 /*
@@ -42,12 +43,15 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb);
 int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, RESMGR_OCB_T *ocb);
 
 int conn_server(char *addr, char *port, int cmd, void *buffer);
-int getspeedometer(char *pspeed, size_t size);
+int getpowertrain(char *pspeed, size_t size);
+int getpowertrain2(POWERTRAIN_T *p);
 int setpowertrain(void *buffer, int nbytes);
+int setpowertrain2(POWERTRAIN_T *p);
 
 static char *buffer = "powertrain\n";
 char recvbuf[200];
 int global_integer = 0;
+POWERTRAIN_T powertrain_t;
 
 int main(int argc, char **argv)
 {
@@ -166,7 +170,7 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
 
         // nparts = 1;
 
-        if (getspeedometer(recvbuf, sizeof recvbuf) == 0)
+        if (getpowertrain(recvbuf, sizeof recvbuf) == 0)
         {
             // printf("recvbuf = %s\n", recvbuf);
             // char log[50];
@@ -222,7 +226,7 @@ int io_read2(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
 
     if (nbytes)
     {
-        if (getspeedometer(recvbuf, sizeof recvbuf) == 0)
+        if (getpowertrain(recvbuf, sizeof recvbuf) == 0)
         {
             printf("recvbuf = %s, %d, %d, 0x%x\n", recvbuf, nbytes, strlen(recvbuf), recvbuf);
             MsgReply(ctp->rcvid, nbytes, recvbuf + ocb->offset, nbytes);
@@ -231,7 +235,7 @@ int io_read2(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
         }
         else
         {
-            printf("getspeedometer fail\n");
+            printf("getpowertrain fail\n");
             MsgReply(ctp->rcvid, EOK, NULL, 0);
         }
     }
@@ -301,6 +305,7 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg,
         data_t data;
         int data32;
         char buff[200];
+        POWERTRAIN_T pt;
         /* ... other devctl types you can receive */
     } * rx_data;
 
@@ -341,15 +346,19 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg,
     case MY_DEVCTL_SETVAL:
         // global_integer = rx_data->data32;
         // nbytes = 0;
-        setpowertrain(rx_data->buff, strlen(rx_data->buff));
+        // setpowertrain(rx_data->buff, strlen(rx_data->buff));
+        // printf("speedometor = %d\n", rx_data->pt.speedometor);
+        setpowertrain2(&(rx_data->pt));
         nbytes = 0;
         break;
 
     case MY_DEVCTL_GETVAL:
         // rx_data->data32 = global_integer; /* See note 4 */
         // nbytes = sizeof(rx_data->data32);
-        getspeedometer(rx_data->buff, sizeof rx_data->buff);
-        nbytes = sizeof rx_data->buff;
+        // getpowertrain(rx_data->buff, sizeof rx_data->buff);
+        // nbytes = sizeof rx_data->buff;
+        getpowertrain2(&(rx_data->pt));
+        nbytes = sizeof rx_data->pt;
         break;
 
     case MY_DEVCTL_SETGET:
@@ -381,11 +390,18 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg,
     return (_RESMGR_PTR(ctp, &msg->o, sizeof(msg->o) + nbytes));
 }
 
-int getspeedometer(char *pspeed, size_t size)
+int getpowertrain(char *pspeed, size_t size)
 {
     memset(pspeed, 0, size);
 
     return conn_server(SER_ADDR, SER_PORT, 0, pspeed);
+}
+
+int getpowertrain2(POWERTRAIN_T *p)
+{
+    memset(p, 0, sizeof(POWERTRAIN_T));
+
+    return conn_server(SER_ADDR, SER_PORT, 0, p);
 }
 
 int getodometer(char *podo)
@@ -396,6 +412,11 @@ int getodometer(char *podo)
 int setpowertrain(void *buffer, int nbytes)
 {
     return conn_server(SER_ADDR, SER_PORT, 1, buffer);
+}
+
+int setpowertrain2(POWERTRAIN_T *p)
+{
+    return conn_server(SER_ADDR, SER_PORT, 1, p);
 }
 
 // get sockaddr, IPv4 or IPv6:
@@ -461,18 +482,19 @@ int conn_server(char *addr, char *port, int cmd, void *buffer)
 
     if (cmd == 0)
     {
-        if ((numbytes = recv(sockfd, buffer, MAXDATASIZE - 1, 0)) == -1)
+        // if ((numbytes = recv(sockfd, buffer, MAXDATASIZE - 1, 0)) == -1)
+        if ((numbytes = recv(sockfd, buffer, sizeof(POWERTRAIN_T), 0)) == -1)
         {
             perror("recv");
         }
 
         // buffer[numbytes] = '\0';
 
-        printf("client: received '%s'\n", buffer);
+        // printf("client: received '%s'\n", buffer);
     }
     else
     {
-        if ((numbytes = send(sockfd, buffer, MAXDATASIZE - 1, 0)) <= 0)
+        if ((numbytes = send(sockfd, buffer, sizeof(POWERTRAIN_T), 0)) <= 0)
         {
             perror("send fail");
         }
