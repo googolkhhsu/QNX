@@ -43,6 +43,8 @@ int main(void)
                powertrain_t.speedometor, powertrain_t.accelerate);
 
         close(testdev);
+
+        usleep(1000); // avoid socket blocked
     }
     return 0;
 }

@@ -350,7 +350,11 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg,
         // nbytes = 0;
         // setpowertrain(rx_data->buff, strlen(rx_data->buff));
         // printf("speedometor = %d\n", rx_data->pt.speedometor);
-        setpowertrain2(&(rx_data->pt));
+        if (setpowertrain2(&(rx_data->pt)) != 0)
+        {
+            printf("setpowertrain2 error: %d\n", errno);
+            return errno;
+        }
         nbytes = 0;
         break;
 
@@ -359,7 +363,11 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg,
         // nbytes = sizeof(rx_data->data32);
         // getpowertrain(rx_data->buff, sizeof rx_data->buff);
         // nbytes = sizeof rx_data->buff;
-        getpowertrain2(&(rx_data->pt));
+        if (getpowertrain2(&(rx_data->pt)) != 0)
+        {
+            printf("getpowertrain2 error: %d\n", errno);
+            return errno;
+        }
         nbytes = sizeof rx_data->pt;
         break;
 
@@ -462,7 +470,9 @@ int conn_server(char *addr, char *port, int cmd, void *buffer)
 
         if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1)
         {
-            perror("client: connect");
+            char err[100];
+            snprintf(err, sizeof err, "client: connect(%d)", errno);
+            perror(err);
             close(sockfd);
             continue;
         }
@@ -498,7 +508,7 @@ int conn_server(char *addr, char *port, int cmd, void *buffer)
     {
         if ((numbytes = send(sockfd, buffer, sizeof(POWERTRAIN_T), 0)) <= 0)
         {
-            perror("send fail");
+            perror("send");
         }
     }
 
