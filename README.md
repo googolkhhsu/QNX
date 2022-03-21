@@ -1,0 +1,3 @@
+# QNX-Exercise
+
+### socket-resmgr
