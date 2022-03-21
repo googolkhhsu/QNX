@@ -3,8 +3,8 @@ HCC:=gcc
 OUT:=out
 RM:=rm -rf
 ECHO=echo
-LIB_SOCKET:=-lsocket
-LIB+=$(LIB_SOCKET)
+LSOCKET:=-lsocket
+LIB+=$(LSOCKET)
 
 #DDEBUG:=DEBUG
 DSER_ADDR:=-DSER_ADDR=\"192.168.179.129\"
